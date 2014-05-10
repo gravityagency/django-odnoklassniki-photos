@@ -19,12 +19,13 @@ install:
   - pip install .
 script:
   - django-admin.py --version
-  - coverage run --source=odnoklassniki_discussions quicktest.py odnoklassniki_discussions
+  - coverage run --source=odnoklassniki_photos quicktest.py odnoklassniki_photos
 after_success:
   - coveralls
 notifications:
   email:
     recipients:
       - ramusus@gmail.com
+      - RomenoEx@gmail.com
     on_success: change
     on_failure: change
