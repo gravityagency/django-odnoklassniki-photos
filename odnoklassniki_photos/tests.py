@@ -67,6 +67,7 @@ class OdnoklassnikiPhotosTest(TestCase):
         # test count is working
         albums_part = Album.remote.fetch(group=group, count=40)
         self.assertTrue(albums_part.count() < 40)
+        self.assertTrue(albums_part.count() > 0)
 
         # test if count is more than max
         self.assertRaises(OdnoklassnikiError, Album.remote.fetch, group=group, count=Album.remote.__class__.fetch_album_limit + 20)
