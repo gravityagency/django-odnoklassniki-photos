@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='django-odnoklassniki-discussions',
-    version=__import__('odnoklassniki_discussions').__version__,
-    description='Django implementation for odnoklassniki API Discussions',
+    name='django-odnoklassniki-photos',
+    version=__import__('odnoklassniki_photos').__version__,
+    description='Django implementation for odnoklassniki Photo and Album API ',
     long_description=open('README.md').read(),
-    author='ramusus',
-    author_email='ramusus@gmail.com',
-    url='https://github.com/ramusus/django-odnoklassniki-discussions',
-    download_url='http://pypi.python.org/pypi/django-odnoklassniki-discussions',
+    author='ramusus, Romeno',
+    author_email='ramusus@gmail.com, RomenoEx@gmail.com',
+    url='https://github.com/ramusus/django-odnoklassniki-photos',
+    download_url='http://pypi.python.org/pypi/django-odnoklassniki-photos',
     license='BSD',
     packages=find_packages(),
     include_package_data=True,
