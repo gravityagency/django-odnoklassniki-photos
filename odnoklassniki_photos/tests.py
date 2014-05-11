@@ -10,15 +10,6 @@ from odnoklassniki_api.utils import OdnoklassnikiError
 from datetime import datetime, date
 from pytz import utc
 
-# GROUP_ID = 16297716
-# ALBUM_ID = '-16297716_154228728'
-# PHOTO_ID = '-16297716_280118215'
-#
-# GROUP_CRUD_ID = 59154616
-# PHOTO_CRUD_ID = '-59154616_321155660'
-# ALBUM_CRUD_ID = '-59154616_180124643'
-# USER_AUTHOR_ID = 201164356
-
 # ria news
 GROUP_ID = 50415375614101
 # sakura blossom

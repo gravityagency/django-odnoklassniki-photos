@@ -18,9 +18,6 @@ class AlbumRemoteManager(OdnoklassnikiManager):
 
     @fetch_all(pagination='pagingAnchor')
     def get(self, *args, **kwargs):
-        extra_fields = kwargs.pop('extra_fields', {})
-        extra_fields['fetched'] = datetime.utcnow().replace(tzinfo=utc)
-
         response = self.api_call(*args, **kwargs)
 
         if kwargs.get('count') and kwargs.get('all'):
@@ -31,7 +28,7 @@ class AlbumRemoteManager(OdnoklassnikiManager):
         else:
             response_data = response.pop('albums')
 
-        return self.parse_response(response_data, extra_fields), response
+        return self.parse_response(response_data), response
 
     @atomic
     def fetch(self, group, **kwargs):
@@ -140,15 +137,12 @@ class PhotoRemoteManager(OdnoklassnikiManager):
 
     @fetch_all
     def get(self, *args, **kwargs):
-        extra_fields = kwargs.pop('extra_fields', {})
-        extra_fields['fetched'] = datetime.utcnow().replace(tzinfo=utc)
-
         if kwargs.get('count') and kwargs.get('all'):
             kwargs['count'] = self.__class__.fetch_photo_limit
 
         response = self.api_call(*args, **kwargs)
 
-        return super(PhotoRemoteManager, self).parse_response(response.pop('photos'), extra_fields), response
+        return super(PhotoRemoteManager, self).parse_response(response.pop('photos')), response
 
     @atomic
     def fetch(self, **kwargs):
@@ -314,13 +308,10 @@ class Photo(OdnoklassnikiPKModel):
 
         kwargs['fields'] = Photo.remote.get_request_fields('user', prefix=True)
 
-        extra_fields = kwargs.pop('extra_fields', {})
-        extra_fields['fetched'] = datetime.utcnow().replace(tzinfo=utc)
-
         response = Photo.remote.api_call(method='get_likes', **kwargs)
         users = response.get('users')
         if users:
-            users_ids = User.remote.get_or_create_from_resources_list(users, extra_fields=extra_fields).values_list('pk', flat=True)
+            users_ids = User.remote.get_or_create_from_resources_list(users).values_list('pk', flat=True)
         else:
             users_ids = EmptyQuerySet(model=User)
 
@@ -358,22 +349,3 @@ class Photo(OdnoklassnikiPKModel):
             self.album = Album.objects.get(id=int(response.get('album_id')))
 
         return super(Photo, self).parse(response)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
