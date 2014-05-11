@@ -49,7 +49,7 @@ class OdnoklassnikiPhotosTest(TestCase):
         for album in albums2:
             self.assertEqual(album, albums.filter(id=album.id)[0])
             self.assertEqual(album.owner, group)
-            self.assertTrue(album.like_count > 0)
+            self.assertTrue(album.likes_count > 0)
             self.assertTrue(album.last_like_date is not None)
             self.assertTrue(album.created is not None)
             self.assertTrue(len(album.owner_name) > 0)
@@ -281,7 +281,7 @@ class OdnoklassnikiPhotosTest(TestCase):
         users = photo.fetch_likes(all=True)
 
         # because API returns 146 users instead of all 147 -- 1 less. Forced to do this kind of checks
-        self.assertTrue(len(users) <= photo.like_count)
+        self.assertTrue(len(users) <= photo.likes_count)
         self.assertTrue(len(users) > User.remote.__class__.fetch_users_limit)
 
         self.assertEqual(len(users), User.objects.count())
@@ -323,7 +323,7 @@ class OdnoklassnikiPhotosTest(TestCase):
         self.assertEqual(instance.id, 544442732181)
         self.assertEqual(instance.created, datetime(2014, 1, 23, 5, 51, 52, tzinfo=utc))
         self.assertEqual(instance.owner_name, u'\u0420\u0418\u0410 \u041d\u043e\u0432\u043e\u0441\u0442\u0438')
-        self.assertEqual(instance.like_count, 147)
+        self.assertEqual(instance.likes_count, 147)
         self.assertEqual(instance.comments_count, 4)
         self.assertEqual(instance.last_like_date, datetime(2014, 4, 16, 13, 37, 42, tzinfo=utc))
         self.assertEqual(instance.pic1024max, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=3&viewToken=zTBy6mruu-TknmDenjXlwg')

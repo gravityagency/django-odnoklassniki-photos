@@ -93,7 +93,7 @@ class Album(OdnoklassnikiPKModel):
 
     photos_count = models.PositiveIntegerField(default=0)
 
-    like_count = models.PositiveIntegerField(default=0)
+    likes_count = models.PositiveIntegerField(default=0)
     last_like_date = models.DateTimeField(null=True)
 
     remote = AlbumRemoteManager(methods={
@@ -104,6 +104,9 @@ class Album(OdnoklassnikiPKModel):
     @property
     def slug(self):
         return '%s/album/%s' % (self.owner.slug, self.id)
+
+    def __unicode__(self):
+        return self.title
 
     def parse(self, response):
         if response.get('author_name'):
@@ -118,7 +121,7 @@ class Album(OdnoklassnikiPKModel):
 
         if response.get('like_summary'):
             summary = response.pop('like_summary')
-            self.like_count = summary.get('count', 0)
+            self.likes_count = summary.get('count', 0)
             try:
                 value = datetime.utcfromtimestamp(int(summary['last_like_date_ms'])/1000).replace(tzinfo=utc)
             except:
@@ -259,7 +262,7 @@ class Photo(OdnoklassnikiPKModel):
 
     created = models.DateTimeField(null=True)
 
-    like_count = models.PositiveIntegerField(default=0)
+    likes_count = models.PositiveIntegerField(default=0)
     last_like_date = models.DateTimeField(null=True)
     like_users = ManyToManyHistoryField(User, related_name='like_photos')
 
@@ -338,7 +341,7 @@ class Photo(OdnoklassnikiPKModel):
 
         summary = response.pop('like_summary', None)
         if summary:
-            self.like_count = summary.get('count', 0)
+            self.likes_count = summary.get('count', 0)
             try:
                 value = datetime.utcfromtimestamp(int(summary['last_like_date_ms'])/1000).replace(tzinfo=utc)
             except:
