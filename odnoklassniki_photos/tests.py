@@ -100,15 +100,22 @@ class OdnoklassnikiPhotosTest(TestCase):
         group = GroupFactory(id=GROUP_ID)
 
         self.assertEqual(Album.objects.count(), 0)
-
-        album = Album.remote.fetch(group=group, ids=[ALBUM1_ID])[0]
-
         self.assertEqual(Photo.objects.count(), 0)
 
-        photos = album.fetch_photos()
+        album = Album.remote.fetch(group=group, ids=[ALBUM_BIG_ID])[0]
+        photos = album.fetch_photos(count=50)
 
-        self.assertTrue(len(photos) > 0)
-        self.assertEqual(Photo.objects.count(), len(photos))
+        self.assertEqual(photos.count(), 50)
+        self.assertEqual(Photo.objects.count(), photos.count())
+
+        photos_count = Photo.objects.count()
+
+        photos = album.fetch_photos(all=True)
+        self.assertTrue(photos.count() > photos_count)
+        self.assertEqual(Photo.objects.count(), photos.count())
+
+        album = Album.objects.get(pk=album.pk)
+        self.assertNotEqual(album.updated, None)
 
     def test_album_parse(self):
         response = '''{"albums":

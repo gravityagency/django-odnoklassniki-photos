@@ -89,7 +89,8 @@ class Album(OdnoklassnikiPKModel):
     owner_id = models.BigIntegerField(db_index=True)
     owner = generic.GenericForeignKey('owner_content_type', 'owner_id')
 
-    created = models.DateField(null=True)
+    created = models.DateTimeField(null=True, db_index=True)
+    updated = models.DateTimeField(null=True, db_index=True)
 
     photos_count = models.PositiveIntegerField(default=0)
 
@@ -352,3 +353,9 @@ class Photo(OdnoklassnikiPKModel):
             self.album = Album.objects.get(id=int(response.get('album_id')))
 
         return super(Photo, self).parse(response)
+
+    def save(self, *args, **kwargs):
+        if not self.album.updated or self.created > self.album.updated:
+            self.album.updated = self.created
+            self.album.save()
+        return super(Photo, self).save(*args, **kwargs)
