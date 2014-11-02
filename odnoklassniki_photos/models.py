@@ -260,10 +260,11 @@ class Photo(OdnoklassnikiPKModel):
 
     album = models.ForeignKey(Album, related_name='photos')
 
-    comments_count = models.PositiveIntegerField(default=0)
 
     created = models.DateTimeField(null=True)
 
+    actions_count = models.PositiveIntegerField(default=0)
+    comments_count = models.PositiveIntegerField(default=0)
     likes_count = models.PositiveIntegerField(default=0)
     last_like_date = models.DateTimeField(null=True)
     like_users = ManyToManyHistoryField(User, related_name='like_photos')
@@ -364,4 +365,5 @@ class Photo(OdnoklassnikiPKModel):
             self.album.updated = self.created
             self.album.save()
 
+        self.actions_count = self.likes_count + self.comments_count
         return super(Photo, self).save(*args, **kwargs)
