@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.db.models.query import EmptyQuerySet
+from django.utils.timezone import is_naive
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
 from odnoklassniki_api.decorators import atomic, fetch_all, fetch_by_chunks_of
 from django.contrib.contenttypes import generic
@@ -259,10 +260,11 @@ class Photo(OdnoklassnikiPKModel):
 
     album = models.ForeignKey(Album, related_name='photos')
 
-    comments_count = models.PositiveIntegerField(default=0)
 
     created = models.DateTimeField(null=True)
 
+    actions_count = models.PositiveIntegerField(default=0)
+    comments_count = models.PositiveIntegerField(default=0)
     likes_count = models.PositiveIntegerField(default=0)
     last_like_date = models.DateTimeField(null=True)
     like_users = ManyToManyHistoryField(User, related_name='like_photos')
@@ -355,7 +357,13 @@ class Photo(OdnoklassnikiPKModel):
         return super(Photo, self).parse(response)
 
     def save(self, *args, **kwargs):
+        # if USE_TZ == False, we will get exception "TypeError: can't compare offset-naive and offset-aware datetimes"
+        if self.album.updated and is_naive(self.album.updated):
+            self.album.updated = self.album.updated.replace(tzinfo=self.created.tzinfo)
+
         if not self.album.updated or self.created > self.album.updated:
             self.album.updated = self.created
             self.album.save()
+
+        self.actions_count = self.likes_count + self.comments_count
         return super(Photo, self).save(*args, **kwargs)
