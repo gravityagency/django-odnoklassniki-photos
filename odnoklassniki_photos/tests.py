@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-import simplejson as json
-from django.test import TestCase
-from .models import Album, Photo
-from .factories import AlbumFactory, PhotoFactory
-from odnoklassniki_groups.factories import GroupFactory
-from odnoklassniki_users.models import User
-from odnoklassniki_users.factories import UserFactory
-from odnoklassniki_api.utils import OdnoklassnikiError
 from datetime import datetime, date
-from pytz import utc
+
+from django.test import TestCase
+from django.utils import timezone
+from odnoklassniki_api.utils import OdnoklassnikiError
+from odnoklassniki_groups.factories import GroupFactory
+from odnoklassniki_users.factories import UserFactory
+from odnoklassniki_users.models import User
+import simplejson as json
+
+from .factories import AlbumFactory, PhotoFactory
+from .models import Album, Photo
 
 # ria news
 GROUP_ID = 50415375614101
@@ -31,6 +33,7 @@ PHOTO2_ID = 584955983472
 
 # Haag discussion
 DISCUSSION_ID = 62575868474773
+
 
 class OdnoklassnikiPhotosTest(TestCase):
 
@@ -61,7 +64,8 @@ class OdnoklassnikiPhotosTest(TestCase):
         self.assertTrue(albums_part.count() > 0)
 
         # test if count is more than max
-        self.assertRaises(OdnoklassnikiError, Album.remote.fetch, group=group, count=Album.remote.__class__.fetch_album_limit + 20)
+        self.assertRaises(OdnoklassnikiError, Album.remote.fetch, group=group,
+                          count=Album.remote.__class__.fetch_album_limit + 20)
 
         # test fetch with default count
         albums_part2 = Album.remote.fetch(group=group)
@@ -105,7 +109,7 @@ class OdnoklassnikiPhotosTest(TestCase):
         album = Album.remote.fetch(group=group, ids=[ALBUM_BIG_ID])[0]
         photos = album.fetch_photos(count=50)
 
-        self.assertEqual(photos.count(), 50)
+        self.assertEqual(photos.count(), 50)  # strange 25 istead of 50
         self.assertEqual(Photo.objects.count(), photos.count())
 
         photos_count = Photo.objects.count()
@@ -139,9 +143,9 @@ class OdnoklassnikiPhotosTest(TestCase):
 
         self.assertEqual(instance.id, 51324428026005)
         self.assertEqual(instance.owner_name, u'\u0420\u0418\u0410 \u041d\u043e\u0432\u043e\u0441\u0442\u0438')
-        self.assertEqual(instance.last_like_date, datetime(2014, 5, 8, 16, 46, 28, tzinfo=utc))
+        self.assertEqual(instance.last_like_date, datetime(2014, 5, 8, 16, 46, 28, tzinfo=timezone.utc))
         self.assertEqual(instance.owner, group)
-        self.assertTrue(isinstance(instance.created, datetime))
+        self.assertIsInstance(instance.created, datetime)
 
     def test_group_fetch_albums(self):
         group = GroupFactory(id=GROUP_ID)
@@ -261,7 +265,8 @@ class OdnoklassnikiPhotosTest(TestCase):
         self.assertRaises(Exception, Photo.remote.fetch_group_specific, group=group, ids=[PHOTO1_ID, PHOTO2_ID])
 
         # "album" should be Album object
-        self.assertRaises(Exception, Photo.remote.fetch_group_specific, group=group, album=11, ids=[PHOTO1_ID, PHOTO2_ID])
+        self.assertRaises(Exception, Photo.remote.fetch_group_specific,
+                          group=group, album=11, ids=[PHOTO1_ID, PHOTO2_ID])
 
         # "ids" argument should present
         self.assertRaises(Exception, Photo.remote.fetch_group_specific, group=group)
@@ -329,21 +334,30 @@ class OdnoklassnikiPhotosTest(TestCase):
         instance.save()
 
         self.assertEqual(instance.id, 544442732181)
-        self.assertEqual(instance.created, datetime(2014, 1, 23, 5, 51, 52, tzinfo=utc))
+        self.assertEqual(instance.created, datetime(2014, 1, 23, 5, 51, 52, tzinfo=timezone.utc))
         self.assertEqual(instance.owner_name, u'\u0420\u0418\u0410 \u041d\u043e\u0432\u043e\u0441\u0442\u0438')
         self.assertEqual(instance.likes_count, 147)
         self.assertEqual(instance.comments_count, 4)
-        self.assertEqual(instance.last_like_date, datetime(2014, 4, 16, 13, 37, 42, tzinfo=utc))
-        self.assertEqual(instance.pic1024max, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=3&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic1024x768, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=3&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic128max, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=2&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic128x128, u'http://itd2.mycdn.me/getImage?photoId=544442732181&photoType=23&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic180min, u'http://itd2.mycdn.me/getImage?photoId=544442732181&photoType=13&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic240min, u'http://itd2.mycdn.me/getImage?photoId=544442732181&photoType=14&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic50x50, u'http://groupava1.mycdn.me/getImage?photoId=544442732181&photoType=4&viewToken=zTBy6mruu-TknmDenjXlwg')
-        self.assertEqual(instance.pic640x480, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=0&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(instance.last_like_date, datetime(2014, 4, 16, 13, 37, 42, tzinfo=timezone.utc))
+        self.assertEqual(
+            instance.pic1024max, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=3&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic1024x768, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=3&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic128max, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=2&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic128x128, u'http://itd2.mycdn.me/getImage?photoId=544442732181&photoType=23&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic180min, u'http://itd2.mycdn.me/getImage?photoId=544442732181&photoType=13&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic240min, u'http://itd2.mycdn.me/getImage?photoId=544442732181&photoType=14&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic50x50, u'http://groupava1.mycdn.me/getImage?photoId=544442732181&photoType=4&viewToken=zTBy6mruu-TknmDenjXlwg')
+        self.assertEqual(
+            instance.pic640x480, u'http://dg52.mycdn.me/getImage?photoId=544442732181&photoType=0&viewToken=zTBy6mruu-TknmDenjXlwg')
         self.assertEqual(instance.standard_height, 768)
         self.assertEqual(instance.standard_width, 768)
-        self.assertEqual(instance.text, u'\u0415\u0441\u043b\u0438 \u0432\u044b \u0434\u0430\u0432\u043d\u043e \u043d\u0435 \u043f\u0438\u0441\u0430\u043b\u0438 \u043a\u043e\u043c\u0443-\u043d\u0438\u0431\u0443\u0434\u044c \u0440\u0443\u043a\u043e\u043f\u0438\u0441\u043d\u044b\u0435 \u043f\u043e\u0441\u043b\u0430\u043d\u0438\u044f \u2014 \u0441\u0435\u0433\u043e\u0434\u043d\u044f \u0435\u0441\u0442\u044c \u043f\u043e\u0432\u043e\u0434: \u0432 \u043c\u0438\u0440\u0435 \u043e\u0442\u043c\u0435\u0447\u0430\u044e\u0442 \u0414\u0435\u043d\u044c \u0440\u0443\u0447\u043d\u043e\u0433\u043e \u043f\u0438\u0441\u044c\u043c\u0430 \u0438\u043b\u0438, \u043f\u0440\u043e\u0449\u0435 \u0433\u043e\u0432\u043e\u0440\u044f, \u043f\u043e\u0447\u0435\u0440\u043a\u0430, \u043a\u043e\u0442\u043e\u0440\u044b\u0439 \u0443 \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430 \u0443\u043d\u0438\u043a\u0430\u043b\u0435\u043d.')
+        self.assertEqual(
+            instance.text, u'\u0415\u0441\u043b\u0438 \u0432\u044b \u0434\u0430\u0432\u043d\u043e \u043d\u0435 \u043f\u0438\u0441\u0430\u043b\u0438 \u043a\u043e\u043c\u0443-\u043d\u0438\u0431\u0443\u0434\u044c \u0440\u0443\u043a\u043e\u043f\u0438\u0441\u043d\u044b\u0435 \u043f\u043e\u0441\u043b\u0430\u043d\u0438\u044f \u2014 \u0441\u0435\u0433\u043e\u0434\u043d\u044f \u0435\u0441\u0442\u044c \u043f\u043e\u0432\u043e\u0434: \u0432 \u043c\u0438\u0440\u0435 \u043e\u0442\u043c\u0435\u0447\u0430\u044e\u0442 \u0414\u0435\u043d\u044c \u0440\u0443\u0447\u043d\u043e\u0433\u043e \u043f\u0438\u0441\u044c\u043c\u0430 \u0438\u043b\u0438, \u043f\u0440\u043e\u0449\u0435 \u0433\u043e\u0432\u043e\u0440\u044f, \u043f\u043e\u0447\u0435\u0440\u043a\u0430, \u043a\u043e\u0442\u043e\u0440\u044b\u0439 \u0443 \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430 \u0443\u043d\u0438\u043a\u0430\u043b\u0435\u043d.')
         self.assertEqual(instance.owner, group)
         self.assertEqual(instance.album, album)
