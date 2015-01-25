@@ -3,7 +3,7 @@ from datetime import datetime, date
 
 from django.test import TestCase
 from django.utils import timezone
-from odnoklassniki_api.utils import OdnoklassnikiError
+from odnoklassniki_api.api import OdnoklassnikiError
 from odnoklassniki_groups.factories import GroupFactory
 from odnoklassniki_users.factories import UserFactory
 from odnoklassniki_users.models import User
