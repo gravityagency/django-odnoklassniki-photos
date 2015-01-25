@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-from django.db import models
-from django.db.models.query import EmptyQuerySet
-from django.utils.timezone import is_naive
-from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
-from odnoklassniki_api.decorators import atomic, fetch_all, fetch_by_chunks_of
+from datetime import datetime
+
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.db.models.query import EmptyQuerySet
+from django.utils import timezone
 from django.utils.six import string_types
 from m2m_history.fields import ManyToManyHistoryField
+from odnoklassniki_api.decorators import atomic, fetch_all, fetch_by_chunks_of
+from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
 from odnoklassniki_groups.models import Group
 from odnoklassniki_users.models import User
-from datetime import datetime
-from pytz import utc
 
 
 class AlbumRemoteManager(OdnoklassnikiManager):
@@ -53,7 +53,8 @@ class AlbumRemoteManager(OdnoklassnikiManager):
     def fetch_group_specific(self, ids, *args, **kwargs):
         group = kwargs.pop('group', None)
         if not isinstance(group, Group):
-            raise Exception('This function needs group parameter (object of odnoklassniki_groups.models.Group) to get albums from')
+            raise Exception(
+                'This function needs group parameter (object of odnoklassniki_groups.models.Group) to get albums from')
 
         if not isinstance(ids, (list, tuple)):
             raise Exception('ids should be tuple or list of ints')
@@ -74,6 +75,7 @@ class AlbumRemoteManager(OdnoklassnikiManager):
 
 
 class Album(OdnoklassnikiPKModel):
+
     class Meta:
         verbose_name = u'Альбом фотографий Одноклассники'
         verbose_name_plural = u'Альбомы фотографий Одноклассники'
@@ -125,7 +127,8 @@ class Album(OdnoklassnikiPKModel):
             summary = response.pop('like_summary')
             self.likes_count = summary.get('count', 0)
             try:
-                value = datetime.utcfromtimestamp(int(summary['last_like_date_ms'])/1000).replace(tzinfo=utc)
+                value = datetime.utcfromtimestamp(
+                    int(summary['last_like_date_ms']) / 1000).replace(tzinfo=timezone.utc)
             except:
                 value = None
             self.last_like_date = value
@@ -249,6 +252,7 @@ class PhotoRemoteManager(OdnoklassnikiManager):
 
 
 class Photo(OdnoklassnikiPKModel):
+
     class Meta:
         verbose_name = u'Фотография Одноклассники'
         verbose_name_plural = u'Фотографии Одноклассники'
@@ -259,7 +263,6 @@ class Photo(OdnoklassnikiPKModel):
     remote_pk_field = 'id'
 
     album = models.ForeignKey(Album, related_name='photos')
-
 
     created = models.DateTimeField(null=True)
 
@@ -295,7 +298,7 @@ class Photo(OdnoklassnikiPKModel):
         'get': 'getPhotos',
         'get_specific': 'getInfo',
         'get_likes': 'getPhotoLikes',
-        })
+    })
 
     def update_likes(self, instances, *args, **kwargs):
         users = User.objects.filter(pk__in=instances)
@@ -340,13 +343,14 @@ class Photo(OdnoklassnikiPKModel):
 
         created = response.pop('created_ms', None)
         if created:
-            response[u'created'] = created/1000
+            response[u'created'] = created / 1000
 
         summary = response.pop('like_summary', None)
         if summary:
             self.likes_count = summary.get('count', 0)
             try:
-                value = datetime.utcfromtimestamp(int(summary['last_like_date_ms'])/1000).replace(tzinfo=utc)
+                value = datetime.utcfromtimestamp(
+                    int(summary['last_like_date_ms']) / 1000).replace(tzinfo=timezone.utc)
             except:
                 value = None
             self.last_like_date = value
@@ -358,7 +362,7 @@ class Photo(OdnoklassnikiPKModel):
 
     def save(self, *args, **kwargs):
         # if USE_TZ == False, we will get exception "TypeError: can't compare offset-naive and offset-aware datetimes"
-        if self.album.updated and is_naive(self.album.updated):
+        if self.album.updated and timezone.is_naive(self.album.updated):
             self.album.updated = self.album.updated.replace(tzinfo=self.created.tzinfo)
 
         if not self.album.updated or self.created > self.album.updated:
