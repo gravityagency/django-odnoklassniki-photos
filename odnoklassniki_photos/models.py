@@ -10,7 +10,6 @@ from django.utils.six import string_types
 from m2m_history.fields import ManyToManyHistoryField
 from odnoklassniki_api.decorators import atomic, fetch_all, fetch_by_chunks_of
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
-from odnoklassniki_groups.models import Group
 from odnoklassniki_users.models import User
 
 
@@ -38,7 +37,9 @@ class AlbumRemoteManager(OdnoklassnikiManager):
         Opt params: count - count of albums to fetch ( value <= fetch_album_limit )
         See: photos.getPhotos, photos.getInfo
         """
-        if not 'count' in kwargs:
+        from odnoklassniki_groups.models import Group
+
+        if 'count' not in kwargs:
             kwargs['count'] = self.__class__.fetch_album_limit
 
         if not isinstance(group, Group):
@@ -51,6 +52,8 @@ class AlbumRemoteManager(OdnoklassnikiManager):
 
     @atomic
     def fetch_group_specific(self, ids, *args, **kwargs):
+        from odnoklassniki_groups.models import Group
+
         group = kwargs.pop('group', None)
         if not isinstance(group, Group):
             raise Exception(
@@ -113,6 +116,8 @@ class Album(OdnoklassnikiPKModel):
         return self.title
 
     def parse(self, response):
+        from odnoklassniki_groups.models import Group
+
         if response.get('author_name'):
             self.owner_name = response.pop('author_name')
 
@@ -158,6 +163,8 @@ class PhotoRemoteManager(OdnoklassnikiManager):
         Params: group, album, [count]
         See: photos.getPhotos
         """
+        from odnoklassniki_groups.models import Group
+
         group = kwargs.get('group')
         if not isinstance(group, Group):
             raise Exception('This function needs group parameter (object of odnoklassniki_groups.models.Group)')
@@ -175,6 +182,8 @@ class PhotoRemoteManager(OdnoklassnikiManager):
         Descr: Fetch list of photos
         See: photos.getInfo
         """
+        from odnoklassniki_groups.models import Group
+
         group = kwargs.get('group')
         if not isinstance(group, Group):
             raise Exception('This function needs group parameter (object of odnoklassniki_groups.models.Group)')
@@ -332,6 +341,8 @@ class Photo(OdnoklassnikiPKModel):
         return '%s' % (self.album.slug, )
 
     def parse(self, response):
+        from odnoklassniki_groups.models import Group
+
         self.owner_name = response.pop('author_name', u'')
 
         if response.get('author_type') not in ['GROUP', None]:
