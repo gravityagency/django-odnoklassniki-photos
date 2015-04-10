@@ -101,25 +101,43 @@ class OdnoklassnikiPhotosTest(TestCase):
         self.assertRaises(Exception, Album.remote.fetch_group_specific, group=group, ids=11)
 
     def test_album_fetch_photos(self):
-        group = GroupFactory(id=GROUP_ID)
 
         self.assertEqual(Album.objects.count(), 0)
         self.assertEqual(Photo.objects.count(), 0)
 
-        album = Album.remote.fetch(group=group, ids=[ALBUM_BIG_ID])[0]
+        group = GroupFactory(id=GROUP_ID)
+        album = AlbumFactory(id=ALBUM_BIG_ID, owner=group)
         photos = album.fetch_photos(count=50)
+        self.assertEqual(photos.count(), 50)
+        self.assertEqual(photos.count(), Photo.objects.count())
 
-        self.assertEqual(photos.count(), 50)  # strange 25 istead of 50
-        self.assertEqual(Photo.objects.count(), photos.count())
-
-        photos_count = Photo.objects.count()
+        Photo.objects.all().delete()
 
         photos = album.fetch_photos(all=True)
-        self.assertTrue(photos.count() > photos_count)
-        self.assertEqual(Photo.objects.count(), photos.count())
+        self.assertGreater(photos.count(), 300)
+        self.assertEqual(photos.count(), Photo.objects.count())
 
         album = Album.objects.get(pk=album.pk)
         self.assertNotEqual(album.updated, None)
+
+    def test_album_fetch_photos_after_before(self):
+
+        group = GroupFactory(id=GROUP_ID)
+        album = AlbumFactory(id=ALBUM_BIG_ID, owner=group)
+
+        # test `after` argument
+        after = datetime(2013, 9, 13, 5, 20, 25).replace(tzinfo=timezone.utc)
+        photos_after = album.fetch_photos(all=True, after=after)
+        self.assertLess(photos_after.count(), 50)
+        self.assertEqual(photos_after.count(), 41)
+        self.assertEqual(photos_after.filter(created__lt=after).count(), 0)
+
+        # # test `before` argument
+        # before = datetime(2013, 9, 28, 5, 16, 54).replace(tzinfo=timezone.utc)
+        # photos_before = album.fetch_photos(all=True, after=after, before=before)
+        # self.assertLess(photos_before.count(), photos_after.count())
+        # self.assertEqual(photos_before.count(), 10)
+        # self.assertEqual(photos_before.filter(created__gt=before).count(), 0)
 
     def test_album_parse(self):
         response = '''{"albums":
@@ -293,12 +311,12 @@ class OdnoklassnikiPhotosTest(TestCase):
 
         users = photo.fetch_likes(all=True)
 
-        # because API returns 146 users instead of all 147 -- 1 less. Forced to do this kind of checks
-        self.assertTrue(len(users) <= photo.likes_count)
-        self.assertTrue(len(users) > User.remote.__class__.fetch_users_limit)
+        self.assertGreater(users.count(), User.remote.__class__.fetch_users_limit)
+        # TODO: because API returns 146 users instead of all 147 -- 1 less. Forced to do this kind of checks
+        self.assertEqual(users.count(), photo.likes_count - 1)
 
-        self.assertEqual(len(users), User.objects.count())
-        self.assertEqual(len(users), photo.like_users.count())
+        self.assertEqual(users.count(), User.objects.count())
+        self.assertEqual(users.count(), photo.like_users.count())
 
     def test_photo_parse(self):
         response = '''{"photos":

@@ -9,14 +9,14 @@ from django.utils import timezone
 from django.utils.six import string_types
 from m2m_history.fields import ManyToManyHistoryField
 from odnoklassniki_api.decorators import atomic, fetch_all, fetch_by_chunks_of
-from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel
+from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel, OdnoklassnikiTimelineManager
 from odnoklassniki_users.models import User
 
 
 class AlbumRemoteManager(OdnoklassnikiManager):
     fetch_album_limit = 100
 
-    @fetch_all(pagination='pagingAnchor')
+    @fetch_all(pagination='pagingAnchor', has_more='hasMore')
     def get(self, *args, **kwargs):
         response = self.api_call(*args, **kwargs)
 
@@ -144,18 +144,20 @@ class Album(OdnoklassnikiPKModel):
         return Photo.remote.fetch(group=self.owner, album=self, **kwargs)
 
 
-class PhotoRemoteManager(OdnoklassnikiManager):
+class PhotoRemoteManager(OdnoklassnikiTimelineManager):
 
+    timeline_cut_fieldname = 'created'
     fetch_photo_limit = 100
 
-    @fetch_all
-    def get(self, *args, **kwargs):
+    @fetch_all(has_more='hasMore')
+    def get(self, **kwargs):
         if kwargs.get('count') and kwargs.get('all'):
-            kwargs['count'] = self.__class__.fetch_photo_limit
+            kwargs['count'] = self.fetch_photo_limit
+        return super(PhotoRemoteManager, self).get(**kwargs), self.response
 
-        response = self.api_call(*args, **kwargs)
-
-        return super(PhotoRemoteManager, self).parse_response(response.pop('photos')), response
+    def parse_response(self, response, extra_fields=None):
+        response = response.pop('photos')
+        return super(PhotoRemoteManager, self).parse_response(response, extra_fields)
 
     @atomic
     def fetch(self, **kwargs):
@@ -214,7 +216,7 @@ class PhotoRemoteManager(OdnoklassnikiManager):
         for album in albums:
             if overall_count is not None and not kwargs.get('all'):
                 overall_count -= len(last_result)
-                kwargs['count'] = min(self.__class__.fetch_photo_limit, overall_count)
+                kwargs['count'] = min(self.fetch_photo_limit, overall_count)
                 if kwargs['count'] <= 0:
                     break
             else:
@@ -245,14 +247,14 @@ class PhotoRemoteManager(OdnoklassnikiManager):
                 result = EmptyQuerySet(model=Photo)
 
                 while count > 0:
-                    kwargs_copy['count'] = min(self.__class__.fetch_photo_limit, count)
+                    kwargs_copy['count'] = min(self.fetch_photo_limit, count)
                     count -= kwargs_copy['count']
                     result = super(PhotoRemoteManager, self).fetch(**kwargs_copy) | result
 
                 return result
             else:
                 # set count to the highest available value to speed pagination
-                kwargs_copy['count'] = self.__class__.fetch_photo_limit
+                kwargs_copy['count'] = self.fetch_photo_limit
                 return super(PhotoRemoteManager, self).fetch(**kwargs_copy)
         else:
             # return all if count is not set
@@ -316,7 +318,7 @@ class Photo(OdnoklassnikiPKModel):
         return users
 
     @atomic
-    @fetch_all(return_all=update_likes)
+    @fetch_all(return_all=update_likes, has_more=None)
     def fetch_likes(self, **kwargs):
         kwargs['photo_id'] = self.pk
         kwargs['gid'] = self.owner.pk
