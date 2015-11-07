@@ -4,9 +4,7 @@ from datetime import datetime
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models.query import EmptyQuerySet
 from django.utils import timezone
-from django.utils.six import string_types
 from m2m_history.fields import ManyToManyHistoryField
 from odnoklassniki_api.decorators import atomic, fetch_all, fetch_by_chunks_of
 from odnoklassniki_api.models import OdnoklassnikiManager, OdnoklassnikiPKModel, OdnoklassnikiTimelineManager
@@ -66,7 +64,7 @@ class AlbumRemoteManager(OdnoklassnikiManager):
         kwargs['gid'] = group.pk
         kwargs['fields'] = self.get_request_fields('group_album', prefix=True)
 
-        result = EmptyQuerySet(model=Album)
+        result = Album.objects.none()
         if kwargs.get('count'):
             ids = ids[:kwargs['count']]
 
@@ -210,8 +208,8 @@ class PhotoRemoteManager(OdnoklassnikiTimelineManager):
         group = kwargs['group']
         albums = Album.remote.fetch(group)
 
-        overall_result = EmptyQuerySet(model=Photo)
-        last_result = EmptyQuerySet(model=Photo)
+        overall_result = Photo.objects.none()
+        last_result = Photo.objects.none()
         overall_count = kwargs.get('count')
         for album in albums:
             if overall_count is not None and not kwargs.get('all'):
@@ -244,7 +242,7 @@ class PhotoRemoteManager(OdnoklassnikiTimelineManager):
         count = kwargs_copy.get('count')
         if count:
             if not kwargs_copy.get('all'):
-                result = EmptyQuerySet(model=Photo)
+                result = Photo.objects.none()
 
                 while count > 0:
                     kwargs_copy['count'] = min(self.fetch_photo_limit, count)
@@ -333,7 +331,7 @@ class Photo(OdnoklassnikiPKModel):
         if users:
             users_ids = User.remote.get_or_create_from_resources_list(users).values_list('pk', flat=True)
         else:
-            users_ids = EmptyQuerySet(model=User)
+            users_ids = User.objects.none()
 
         return users_ids, response
 
